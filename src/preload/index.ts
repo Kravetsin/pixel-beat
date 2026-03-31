@@ -11,7 +11,12 @@ const api = {
   windowClose: () => ipcRenderer.send('window:close'),
   onTrayTogglePlay: (cb: () => void) => ipcRenderer.on('tray:toggle-play', cb),
   onTrayNext: (cb: () => void) => ipcRenderer.on('tray:next', cb),
-  onTrayPrevious: (cb: () => void) => ipcRenderer.on('tray:previous', cb)
+  onTrayPrevious: (cb: () => void) => ipcRenderer.on('tray:previous', cb),
+  onUpdateAvailable: (cb: (version: string) => void) => ipcRenderer.on('update:available', (_, v) => cb(v)),
+  onUpdateProgress: (cb: (percent: number) => void) => ipcRenderer.on('update:progress', (_, p) => cb(p)),
+  onUpdateDownloaded: (cb: () => void) => ipcRenderer.on('update:downloaded', cb),
+  downloadUpdate: () => ipcRenderer.send('update:download'),
+  installUpdate: () => ipcRenderer.send('update:install')
 }
 
 if (process.contextIsolated) {

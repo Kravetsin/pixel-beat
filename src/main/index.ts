@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, session, Tray, Menu, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
 import { importPlaylist, getAudioStreamUrl } from './services/ytdlp'
 import { setValue, getValue } from './services/store'
@@ -123,6 +124,40 @@ function registerIpcHandlers(): void {
   })
 }
 
+function setupAutoUpdater(): void {
+  if (is.dev) return
+
+  autoUpdater.autoDownload = false
+  autoUpdater.autoInstallOnAppQuit = true
+
+  autoUpdater.on('update-available', (info) => {
+    mainWindow?.webContents.send('update:available', info.version)
+  })
+
+  autoUpdater.on('download-progress', (progress) => {
+    mainWindow?.webContents.send('update:progress', Math.round(progress.percent))
+  })
+
+  autoUpdater.on('update-downloaded', () => {
+    mainWindow?.webContents.send('update:downloaded')
+  })
+
+  autoUpdater.on('error', () => {
+    // Silent fail — don't bother the user
+  })
+
+  ipcMain.on('update:download', () => {
+    autoUpdater.downloadUpdate()
+  })
+
+  ipcMain.on('update:install', () => {
+    isQuitting = true
+    autoUpdater.quitAndInstall()
+  })
+
+  autoUpdater.checkForUpdates()
+}
+
 app.on('before-quit', () => {
   isQuitting = true
 })
@@ -167,6 +202,7 @@ app.whenReady().then(() => {
   registerIpcHandlers()
   createTray()
   createWindow()
+  setupAutoUpdater()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

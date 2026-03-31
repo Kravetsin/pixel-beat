@@ -8,6 +8,7 @@ import ImportModal from './components/ImportModal.vue'
 import PlaylistPanel from './components/PlaylistPanel.vue'
 import PlayerControls from './components/PlayerControls.vue'
 import PetCanvas from './components/PetCanvas.vue'
+import UpdateNotification from './components/UpdateNotification.vue'
 import { useTheme } from './composables/useTheme'
 import { usePet } from './composables/usePet'
 import type { Track } from '../../shared/types'
@@ -148,6 +149,8 @@ function handleTogglePlayPause(): void {
         </p>
       </div>
     </main>
+
+    <UpdateNotification />
 
     <div v-if="player.playbackError.value" class="px-4 py-1 bg-accent-soft/30 text-text-primary border-t border-accent-soft" style="font-size: 7px;">
       {{ player.playbackError.value }}

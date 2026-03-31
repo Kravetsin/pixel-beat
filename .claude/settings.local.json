@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
-      "Bash(npx electron-vite:*)"
+      "Bash(npx electron-vite:*)",
+      "Bash(git add:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

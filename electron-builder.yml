@@ -44,3 +44,7 @@ extraResources:
   - from: resources/yt-dlp/
     to: yt-dlp/
 npmRebuild: false
+publish:
+  provider: github
+  owner: Kravetsin
+  repo: pixel-beat
