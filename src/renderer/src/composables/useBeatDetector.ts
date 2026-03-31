@@ -20,7 +20,7 @@ export function useBeatDetector(audio: HTMLAudioElement) {
 
   let ctx: AudioContext | null = null
   let analyser: AnalyserNode | null = null
-  let dataArray: Uint8Array | null = null
+  let dataArray: Uint8Array<ArrayBuffer> | null = null
   let rafId: number | null = null
   let initialized = false
 
@@ -46,11 +46,12 @@ export function useBeatDetector(audio: HTMLAudioElement) {
     source.connect(analyser)
     analyser.connect(ctx.destination)
 
-    dataArray = new Uint8Array(analyser.frequencyBinCount)
+    dataArray = new Uint8Array(analyser.frequencyBinCount) as Uint8Array<ArrayBuffer>
     isActive.value = true
   }
 
-  function getEnergyInRange(data: Uint8Array, start: number, end: number): number {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function getEnergyInRange(data: any, start: number, end: number): number {
     let sum = 0
     const count = end - start
     for (let i = start; i < end && i < data.length; i++) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { PetEngine } from '../pet/PetEngine'
 import type { BeatEnergy } from '../composables/useBeatDetector'
 

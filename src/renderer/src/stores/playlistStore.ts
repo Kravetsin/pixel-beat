@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, toRaw } from 'vue'
+import { ref } from 'vue'
 import type { Playlist, Track } from '../../../shared/types'
 
 export const usePlaylistStore = defineStore('playlist', () => {

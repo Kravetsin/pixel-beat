@@ -7,6 +7,7 @@ import { setValue, getValue } from './services/store'
 
 let tray: Tray | null = null
 let mainWindow: BrowserWindow | null = null
+let isQuitting = false
 
 function createTray(): void {
   const trayIcon = nativeImage.createFromPath(icon)
@@ -33,6 +34,7 @@ function createTray(): void {
     {
       label: 'Quit',
       click: () => {
+        isQuitting = true
         app.quit()
       }
     }
@@ -80,7 +82,7 @@ function createWindow(): void {
 
   // Minimize to tray instead of closing
   mainWindow.on('close', (e) => {
-    if (!app.isQuitting) {
+    if (!isQuitting) {
       e.preventDefault()
       mainWindow!.hide()
     }
@@ -98,33 +100,31 @@ function createWindow(): void {
   }
 }
 
-function ipcHandler<T extends unknown[], R>(fn: (...args: T) => Promise<R>) {
-  return async (_event: Electron.IpcMainInvokeEvent, ...args: T): Promise<R> => {
+function registerIpcHandlers(): void {
+  ipcMain.handle('playlist:import', async (_, url: string) => {
     try {
-      return await fn(...args)
+      return await importPlaylist(url)
     } catch (e) {
       throw new Error(e instanceof Error ? e.message : String(e))
     }
-  }
+  })
+  ipcMain.handle('audio:get-stream-url', async (_, videoId: string) => {
+    try {
+      return await getAudioStreamUrl(videoId)
+    } catch (e) {
+      throw new Error(e instanceof Error ? e.message : String(e))
+    }
+  })
+  ipcMain.handle('store:set', (_, key: string, value: unknown) => {
+    setValue(key, value)
+  })
+  ipcMain.handle('store:get', (_, key: string) => {
+    return getValue(key)
+  })
 }
-
-function registerIpcHandlers(): void {
-  ipcMain.handle('playlist:import', ipcHandler(importPlaylist))
-  ipcMain.handle('audio:get-stream-url', ipcHandler(getAudioStreamUrl))
-  ipcMain.handle('store:set', ipcHandler(setValue))
-  ipcMain.handle('store:get', ipcHandler(getValue))
-}
-
-// Extend app with isQuitting flag
-declare module 'electron' {
-  interface App {
-    isQuitting: boolean
-  }
-}
-app.isQuitting = false
 
 app.on('before-quit', () => {
-  app.isQuitting = true
+  isQuitting = true
 })
 
 app.whenReady().then(() => {

@@ -75,7 +75,7 @@ async function handleImport(url: string): Promise<void> {
   }
 }
 
-function handleTrackSelect(track: Track, index: number): void {
+function handleTrackSelect(_track: Track, index: number): void {
   playlistStore.setQueue(allTracks.value, index)
   player.playTrackAtIndex(index)
 }
