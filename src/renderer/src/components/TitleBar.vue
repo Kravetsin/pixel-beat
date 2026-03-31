@@ -1,7 +1,13 @@
 <script setup lang="ts">
+import { useTheme } from '../composables/useTheme'
+import { usePet } from '../composables/usePet'
+
 defineEmits<{
   import: []
 }>()
+
+const { currentTheme, nextTheme } = useTheme()
+const { currentPet, nextPet } = usePet()
 
 function minimize(): void { window.api.windowMinimize() }
 function maximize(): void { window.api.windowMaximize() }
@@ -13,6 +19,26 @@ function close(): void { window.api.windowClose() }
     <h1 class="text-accent" style="font-size: 10px; letter-spacing: 2px;">PixelBeat</h1>
 
     <div class="flex items-center gap-1 titlebar-no-drag">
+      <!-- Pet switcher -->
+      <button
+        class="pixel-btn--ghost px-2 py-1 text-text-dim hover:text-accent"
+        style="font-size: 8px;"
+        :title="'Pet: ' + currentPet.name"
+        @click="nextPet()"
+      >
+        {{ currentPet.name }}
+      </button>
+
+      <!-- Theme switcher -->
+      <button
+        class="pixel-btn--ghost px-2 py-1 text-text-dim hover:text-accent"
+        style="font-size: 8px;"
+        :title="'Theme: ' + currentTheme.name"
+        @click="nextTheme()"
+      >
+        {{ currentTheme.name }}
+      </button>
+
       <button
         class="pixel-btn"
         style="font-size: 7px;"

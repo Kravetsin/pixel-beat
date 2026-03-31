@@ -8,11 +8,15 @@ import ImportModal from './components/ImportModal.vue'
 import PlaylistPanel from './components/PlaylistPanel.vue'
 import PlayerControls from './components/PlayerControls.vue'
 import PetCanvas from './components/PetCanvas.vue'
+import { useTheme } from './composables/useTheme'
+import { usePet } from './composables/usePet'
 import type { Track } from '../../shared/types'
 
 const playlistStore = usePlaylistStore()
 const playerStore = usePlayerStore()
 const player = usePlayer()
+const { currentTheme } = useTheme()
+const { currentPet } = usePet()
 
 const showImportModal = ref(false)
 const importing = ref(false)
@@ -27,14 +31,13 @@ onMounted(async () => {
   window.api.onTrayNext(() => player.next())
   window.api.onTrayPrevious(() => player.previous())
 
-  // Restore last track (without auto-playing)
+  // Restore last track visually (without auto-playing or setting queue)
   const last = await playerStore.getLastTrack()
   if (last) {
     const tracks = playlistStore.playlists.flatMap((p) => p.tracks)
-    const idx = tracks.findIndex((t) => t.id === last.trackId)
-    if (idx !== -1) {
-      playlistStore.setQueue(tracks, idx)
-      playerStore.currentTrack = tracks[idx]
+    const found = tracks.find((t) => t.id === last.trackId)
+    if (found) {
+      playerStore.currentTrack = found
     }
   }
 })
@@ -42,9 +45,9 @@ onMounted(async () => {
 const pet_state_label = computed(() => {
   const e = player.beatDetector.energy
   if (e.overall === 0) return 'Sleeping...'
-  if (e.overall < 0.15) return 'Chilling'
-  if (e.bass > 0.7) return 'HEADBANG!'
-  if (e.bass > 0.5) return 'Jumping!'
+  if (e.overall < 0.1) return 'Chilling'
+  if (e.bass > 0.85) return 'HEADBANG!'
+  if (e.bass > 0.65) return 'Jumping!'
   return 'Dancing~'
 })
 
@@ -79,6 +82,20 @@ function handleTrackSelect(_track: Track, index: number): void {
   playlistStore.setQueue(allTracks.value, index)
   player.playTrackAtIndex(index)
 }
+
+function handleTogglePlayPause(): void {
+  // If we have a restored track but no queue yet, start it properly
+  if (playerStore.currentTrack && playlistStore.queue.length === 0) {
+    const tracks = allTracks.value
+    const idx = tracks.findIndex((t) => t.id === playerStore.currentTrack!.id)
+    if (idx !== -1) {
+      playlistStore.setQueue(tracks, idx)
+      player.playTrackAtIndex(idx)
+      return
+    }
+  }
+  player.audio.togglePlayPause()
+}
 </script>
 
 <template>
@@ -100,6 +117,8 @@ function handleTrackSelect(_track: Track, index: number): void {
         <PetCanvas
           :energy="player.beatDetector.energy"
           :is-playing="playerStore.isPlaying"
+          :pet-colors="currentTheme.pet"
+          :pet-type="currentPet.id as any"
         />
 
         <!-- Energy bars -->
@@ -147,7 +166,7 @@ function handleTrackSelect(_track: Track, index: number): void {
       <PlayerControls
         @previous="player.previous"
         @next="player.next"
-        @toggle-play-pause="player.audio.togglePlayPause"
+        @toggle-play-pause="handleTogglePlayPause"
         @seek="player.audio.seek"
         @volume="player.audio.setVolume"
         @toggle-shuffle="player.toggleShuffle"

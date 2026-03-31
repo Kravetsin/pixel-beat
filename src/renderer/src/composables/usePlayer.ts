@@ -11,8 +11,11 @@ export function usePlayer() {
   const beatDetector = useBeatDetector(audio.audioElement)
   const playbackError = ref('')
 
-  // Ensure AudioContext is resumed BEFORE audio.play()
-  audio.setOnBeforePlay(() => beatDetector.ensureReady())
+  // Ensure AudioContext is resumed BEFORE audio.play(), then start analysis
+  audio.setOnBeforePlay(async () => {
+    await beatDetector.ensureReady()
+    beatDetector.startAnalysis()
+  })
 
   watch(() => playerStore.isPlaying, (playing) => {
     if (playing) {

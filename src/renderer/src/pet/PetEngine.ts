@@ -1,95 +1,86 @@
 import type { BeatEnergy } from '../composables/useBeatDetector'
 
 export type PetState = 'sleep' | 'idle' | 'dance' | 'jump' | 'headbang'
+export type PetType = 'cat' | 'ghost'
 
-const PIXEL = 4 // scale factor for pixel art look
+export interface PetColors {
+  body: string
+  dark: string
+  inner: string
+  eyeGlow: string
+}
+
+const PIXEL = 4
 
 export class PetEngine {
   state: PetState = 'sleep'
+  petType: PetType = 'cat'
   frame = 0
-  animSpeed = 4 // frames per second
+  animSpeed = 4
   scaleY = 1
   offsetX = 0
   offsetY = 0
   eyeGlow = false
+  colors: PetColors = { body: '#e94560', dark: '#533483', inner: '#ff8fa3', eyeGlow: '#00ffff' }
   private time = 0
   private frameTimer = 0
-  private beatPulse = 0 // 0-1, spikes on beat
+  private beatPulse = 0
+  private stateTimer = 0 // time in current state (prevents flickering)
 
   update(energy: BeatEnergy, dt: number): void {
     this.time += dt
+    this.stateTimer += dt
 
-    // State transitions based on energy
+    // State transitions with higher thresholds and minimum hold time
+    let newState: PetState = this.state
     if (energy.overall === 0) {
-      this.state = 'sleep'
-    } else if (energy.overall < 0.15) {
-      this.state = 'idle'
-    } else if (energy.bass > 0.5 && energy.overall > 0.4) {
-      this.state = energy.bass > 0.7 ? 'headbang' : 'jump'
+      newState = 'sleep'
+    } else if (energy.overall < 0.1) {
+      newState = 'idle'
+    } else if (energy.bass > 0.85 && energy.overall > 0.55) {
+      newState = 'headbang'
+    } else if (energy.bass > 0.65 && energy.overall > 0.45) {
+      newState = 'jump'
     } else {
-      this.state = 'dance'
+      newState = 'dance'
     }
 
-    // Animation speed driven by energy
-    this.animSpeed = 2 + energy.overall * 12
+    // Only switch state if held for a minimum time (prevents flickering)
+    // Except sleep/idle which should be immediate
+    if (newState !== this.state) {
+      const minHold = (newState === 'sleep' || newState === 'idle') ? 0 : 0.15
+      if (this.stateTimer >= minHold) {
+        this.state = newState
+        this.stateTimer = 0
+      }
+    }
 
-    // Frame advance
+    this.animSpeed = 2 + energy.overall * 10
     this.frameTimer += dt
-    const frameDuration = 1 / this.animSpeed
-    if (this.frameTimer >= frameDuration) {
-      this.frameTimer -= frameDuration
+    if (this.frameTimer >= 1 / this.animSpeed) {
+      this.frameTimer -= 1 / this.animSpeed
       this.frame++
     }
+    if (energy.isBeat) this.beatPulse = 1
+    else this.beatPulse *= 0.85
 
-    // Beat pulse (spike on beat, decay)
-    if (energy.isBeat) {
-      this.beatPulse = 1
-    } else {
-      this.beatPulse *= 0.85
-    }
-
-    // Squash & stretch on bass
-    const targetScaleY = 1 + this.beatPulse * 0.12
-    this.scaleY += (targetScaleY - this.scaleY) * 0.15
-
-    // Horizontal sway driven by mid
+    this.scaleY += (1 + this.beatPulse * 0.12 - this.scaleY) * 0.15
     this.offsetX = Math.sin(this.time * energy.mid * 5) * energy.mid * 5
-
-    // Vertical bounce on bass
     this.offsetY = -this.beatPulse * 6
-
-    // Eye glow on high energy
     this.eyeGlow = energy.high > 0.3
   }
 
   render(ctx: CanvasRenderingContext2D, width: number, height: number): void {
     ctx.clearRect(0, 0, width, height)
-
-    const cx = width / 2 + this.offsetX
-    const cy = height * 0.65 + this.offsetY
-
     ctx.save()
-    ctx.translate(cx, cy)
+    ctx.translate(width / 2 + this.offsetX, height * 0.65 + this.offsetY)
     ctx.scale(1, this.scaleY)
 
-    switch (this.state) {
-      case 'sleep':
-        this.drawSleeping(ctx)
-        break
-      case 'idle':
-        this.drawIdle(ctx)
-        break
-      case 'dance':
-        this.drawDancing(ctx)
-        break
-      case 'jump':
-        this.drawJumping(ctx)
-        break
-      case 'headbang':
-        this.drawHeadbanging(ctx)
-        break
+    if (this.petType === 'ghost') {
+      this.renderGhost(ctx)
+    } else {
+      this.renderCat(ctx)
     }
-
     ctx.restore()
   }
 
@@ -98,123 +89,216 @@ export class PetEngine {
     ctx.fillRect(x * PIXEL, y * PIXEL, PIXEL, PIXEL)
   }
 
-  private drawBody(ctx: CanvasRenderingContext2D): void {
-    const c = '#e94560' // body color
-    const d = '#533483' // darker shade
+  // ===================== CAT =====================
 
-    // Body (8x6 block centered)
-    for (let x = -4; x < 4; x++) {
-      for (let y = -3; y < 3; y++) {
-        this.p(ctx, x, y, c)
-      }
+  private renderCat(ctx: CanvasRenderingContext2D): void {
+    switch (this.state) {
+      case 'sleep': this.catSleep(ctx); break
+      case 'idle': this.catIdle(ctx); break
+      case 'dance': this.catDance(ctx); break
+      case 'jump': this.catJump(ctx); break
+      case 'headbang': this.catHeadbang(ctx); break
     }
-
-    // Feet
-    this.p(ctx, -3, 3, d)
-    this.p(ctx, -2, 3, d)
-    this.p(ctx, 2, 3, d)
-    this.p(ctx, 3, 3, d)
   }
 
-  private drawEars(ctx: CanvasRenderingContext2D, tilt = 0): void {
-    const c = '#e94560'
-    const inner = '#ff8fa3'
-    // Left ear
-    this.p(ctx, -4 + tilt, -5, c)
-    this.p(ctx, -3 + tilt, -5, c)
-    this.p(ctx, -4 + tilt, -4, c)
-    this.p(ctx, -3 + tilt, -4, inner)
-    // Right ear
-    this.p(ctx, 2 - tilt, -5, c)
-    this.p(ctx, 3 - tilt, -5, c)
-    this.p(ctx, 3 - tilt, -4, c)
-    this.p(ctx, 2 - tilt, -4, inner)
+  private catBody(ctx: CanvasRenderingContext2D): void {
+    const { body, dark } = this.colors
+    for (let x = -4; x < 4; x++)
+      for (let y = -3; y < 3; y++)
+        this.p(ctx, x, y, body)
+    this.p(ctx, -3, 3, dark); this.p(ctx, -2, 3, dark)
+    this.p(ctx, 2, 3, dark); this.p(ctx, 3, 3, dark)
   }
 
-  private drawEyes(ctx: CanvasRenderingContext2D, blinking = false): void {
-    const eyeColor = this.eyeGlow ? '#00ffff' : '#ffffff'
+  private catEars(ctx: CanvasRenderingContext2D, tilt = 0): void {
+    const { body, inner } = this.colors
+    this.p(ctx, -4 + tilt, -5, body); this.p(ctx, -3 + tilt, -5, body)
+    this.p(ctx, -4 + tilt, -4, body); this.p(ctx, -3 + tilt, -4, inner)
+    this.p(ctx, 2 - tilt, -5, body); this.p(ctx, 3 - tilt, -5, body)
+    this.p(ctx, 3 - tilt, -4, body); this.p(ctx, 2 - tilt, -4, inner)
+  }
+
+  private catEyes(ctx: CanvasRenderingContext2D, blinking = false): void {
+    const eyeColor = this.eyeGlow ? this.colors.eyeGlow : '#ffffff'
     if (blinking) {
-      this.p(ctx, -2, -2, '#333')
-      this.p(ctx, 1, -2, '#333')
+      this.p(ctx, -2, -2, '#333'); this.p(ctx, 1, -2, '#333')
     } else {
-      this.p(ctx, -2, -2, eyeColor)
-      this.p(ctx, -2, -1, '#111')
-      this.p(ctx, 1, -2, eyeColor)
-      this.p(ctx, 1, -1, '#111')
+      this.p(ctx, -2, -2, eyeColor); this.p(ctx, -2, -1, '#111')
+      this.p(ctx, 1, -2, eyeColor); this.p(ctx, 1, -1, '#111')
     }
   }
 
-  private drawTail(ctx: CanvasRenderingContext2D, wag: number): void {
-    const c = '#e94560'
-    const tailX = 4
-    const wave = Math.round(Math.sin(wag) * 2)
-    this.p(ctx, tailX, 1, c)
-    this.p(ctx, tailX + 1, 0 + wave, c)
-    this.p(ctx, tailX + 2, -1 + wave, c)
+  private catTail(ctx: CanvasRenderingContext2D, wag: number): void {
+    const { body } = this.colors
+    const w = Math.round(Math.sin(wag) * 2)
+    this.p(ctx, 4, 1, body)
+    this.p(ctx, 5, 0 + w, body)
+    this.p(ctx, 6, -1 + w, body)
   }
 
-  private drawSleeping(ctx: CanvasRenderingContext2D): void {
-    this.drawBody(ctx)
-    this.drawEars(ctx)
-    // Closed eyes
-    this.p(ctx, -2, -1, '#333')
-    this.p(ctx, 1, -1, '#333')
-    this.drawTail(ctx, 0)
-
-    // Zzz
-    const zPhase = Math.floor(this.time * 2) % 3
-    ctx.fillStyle = '#888'
-    ctx.font = `${PIXEL * 2}px monospace`
-    ctx.fillText('z', 5 * PIXEL, (-5 - zPhase) * PIXEL)
-    if (zPhase > 0) ctx.fillText('z', 7 * PIXEL, (-6 - zPhase) * PIXEL)
+  private catSleep(ctx: CanvasRenderingContext2D): void {
+    this.catBody(ctx); this.catEars(ctx)
+    this.p(ctx, -2, -1, '#333'); this.p(ctx, 1, -1, '#333')
+    this.catTail(ctx, 0)
+    const z = Math.floor(this.time * 2) % 3
+    ctx.fillStyle = '#888'; ctx.font = `${PIXEL * 2}px monospace`
+    ctx.fillText('z', 5 * PIXEL, (-5 - z) * PIXEL)
+    if (z > 0) ctx.fillText('z', 7 * PIXEL, (-6 - z) * PIXEL)
   }
 
-  private drawIdle(ctx: CanvasRenderingContext2D): void {
-    const bob = Math.sin(this.time * 2) * 1.5
-    ctx.translate(0, bob)
-    this.drawBody(ctx)
-    this.drawEars(ctx)
-    const blinking = Math.floor(this.time * 3) % 20 === 0
-    this.drawEyes(ctx, blinking)
-    this.drawTail(ctx, this.time * 2)
+  private catIdle(ctx: CanvasRenderingContext2D): void {
+    ctx.translate(0, Math.sin(this.time * 2) * 1.5)
+    this.catBody(ctx); this.catEars(ctx)
+    this.catEyes(ctx, Math.floor(this.time * 3) % 20 === 0)
+    this.catTail(ctx, this.time * 2)
   }
 
-  private drawDancing(ctx: CanvasRenderingContext2D): void {
-    this.drawBody(ctx)
-    this.drawEars(ctx, Math.round(Math.sin(this.time * 6)))
-    this.drawEyes(ctx)
-    this.drawTail(ctx, this.time * 6)
-
-    // Bouncing feet
-    const step = this.frame % 2 === 0
-    if (step) {
-      this.p(ctx, -3, 2, '#533483')
-      this.p(ctx, 2, 4, '#533483')
+  private catDance(ctx: CanvasRenderingContext2D): void {
+    this.catBody(ctx)
+    this.catEars(ctx, Math.round(Math.sin(this.time * 6)))
+    this.catEyes(ctx); this.catTail(ctx, this.time * 6)
+    const { dark } = this.colors
+    if (this.frame % 2 === 0) {
+      this.p(ctx, -3, 2, dark); this.p(ctx, 2, 4, dark)
     } else {
-      this.p(ctx, -3, 4, '#533483')
-      this.p(ctx, 2, 2, '#533483')
+      this.p(ctx, -3, 4, dark); this.p(ctx, 2, 2, dark)
     }
   }
 
-  private drawJumping(ctx: CanvasRenderingContext2D): void {
-    this.drawBody(ctx)
-    this.drawEars(ctx, -1)
-    this.drawEyes(ctx)
-    this.drawTail(ctx, this.time * 8)
-
-    // Arms up
-    this.p(ctx, -5, -2, '#e94560')
-    this.p(ctx, -5, -3, '#e94560')
-    this.p(ctx, 4, -2, '#e94560')
-    this.p(ctx, 4, -3, '#e94560')
+  private catJump(ctx: CanvasRenderingContext2D): void {
+    this.catBody(ctx); this.catEars(ctx, -1)
+    this.catEyes(ctx); this.catTail(ctx, this.time * 8)
+    const { body } = this.colors
+    this.p(ctx, -5, -2, body); this.p(ctx, -5, -3, body)
+    this.p(ctx, 4, -2, body); this.p(ctx, 4, -3, body)
   }
 
-  private drawHeadbanging(ctx: CanvasRenderingContext2D): void {
-    const headTilt = Math.sin(this.time * 12) * 2
-    ctx.translate(0, Math.abs(headTilt))
-    this.drawBody(ctx)
-    this.drawEars(ctx, Math.round(headTilt))
-    this.drawEyes(ctx)
-    this.drawTail(ctx, this.time * 10)
+  private catHeadbang(ctx: CanvasRenderingContext2D): void {
+    const h = Math.sin(this.time * 12) * 2
+    ctx.translate(0, Math.abs(h))
+    this.catBody(ctx); this.catEars(ctx, Math.round(h))
+    this.catEyes(ctx); this.catTail(ctx, this.time * 10)
+  }
+
+  // ===================== GHOST =====================
+
+  private renderGhost(ctx: CanvasRenderingContext2D): void {
+    switch (this.state) {
+      case 'sleep': this.ghostSleep(ctx); break
+      case 'idle': this.ghostIdle(ctx); break
+      case 'dance': this.ghostDance(ctx); break
+      case 'jump': this.ghostJump(ctx); break
+      case 'headbang': this.ghostHeadbang(ctx); break
+    }
+  }
+
+  private ghostBody(ctx: CanvasRenderingContext2D, squish = 0): void {
+    const { body, dark } = this.colors
+    // Round head
+    for (let x = -3; x <= 3; x++)
+      for (let y = -5; y <= -3; y++)
+        this.p(ctx, x, y, body)
+    this.p(ctx, -2, -6, body); this.p(ctx, -1, -6, body)
+    this.p(ctx, 0, -6, body); this.p(ctx, 1, -6, body); this.p(ctx, 2, -6, body)
+    // Body
+    for (let x = -4; x <= 4; x++)
+      for (let y = -2; y <= 3 + squish; y++)
+        this.p(ctx, x, y, body)
+    // Wavy bottom
+    const wave = Math.sin(this.time * 4)
+    for (let x = -4; x <= 4; x++) {
+      const w = Math.round(Math.sin(x * 1.2 + wave * 2) * 0.8)
+      this.p(ctx, x, 4 + squish + w, body)
+    }
+    // Dark bottom edge hints
+    this.p(ctx, -3, 4 + squish, dark); this.p(ctx, 0, 4 + squish, dark); this.p(ctx, 3, 4 + squish, dark)
+  }
+
+  private ghostEyes(ctx: CanvasRenderingContext2D, blinking = false, oy = 0): void {
+    const eyeColor = this.eyeGlow ? this.colors.eyeGlow : '#111111'
+    if (blinking) {
+      this.p(ctx, -2, -3 + oy, '#333'); this.p(ctx, 2, -3 + oy, '#333')
+    } else {
+      // Big round eyes
+      this.p(ctx, -2, -4 + oy, eyeColor); this.p(ctx, -1, -4 + oy, eyeColor)
+      this.p(ctx, -2, -3 + oy, eyeColor); this.p(ctx, -1, -3 + oy, eyeColor)
+      // Right eye
+      this.p(ctx, 1, -4 + oy, eyeColor); this.p(ctx, 2, -4 + oy, eyeColor)
+      this.p(ctx, 1, -3 + oy, eyeColor); this.p(ctx, 2, -3 + oy, eyeColor)
+      // Pupils (white shine dots)
+      this.p(ctx, -2, -4 + oy, '#ffffff')
+      this.p(ctx, 1, -4 + oy, '#ffffff')
+    }
+  }
+
+  private ghostMouth(ctx: CanvasRenderingContext2D, open = false, oy = 0): void {
+    if (open) {
+      this.p(ctx, -1, -1 + oy, '#333'); this.p(ctx, 0, -1 + oy, '#333'); this.p(ctx, 1, -1 + oy, '#333')
+      this.p(ctx, 0, 0 + oy, '#333')
+    } else {
+      this.p(ctx, -1, -1 + oy, '#333'); this.p(ctx, 0, -1 + oy, '#333'); this.p(ctx, 1, -1 + oy, '#333')
+    }
+  }
+
+  private ghostCheeks(ctx: CanvasRenderingContext2D, oy = 0): void {
+    const { inner } = this.colors
+    this.p(ctx, -3, -2 + oy, inner); this.p(ctx, 3, -2 + oy, inner)
+  }
+
+  private ghostSleep(ctx: CanvasRenderingContext2D): void {
+    const float = Math.sin(this.time * 1.5) * 2
+    ctx.translate(0, float)
+    this.ghostBody(ctx)
+    this.ghostEyes(ctx, true)
+    this.ghostMouth(ctx)
+    this.ghostCheeks(ctx)
+    const z = Math.floor(this.time * 2) % 3
+    ctx.fillStyle = '#888'; ctx.font = `${PIXEL * 2}px monospace`
+    ctx.fillText('z', 5 * PIXEL, (-7 - z) * PIXEL)
+    if (z > 0) ctx.fillText('z', 7 * PIXEL, (-8 - z) * PIXEL)
+  }
+
+  private ghostIdle(ctx: CanvasRenderingContext2D): void {
+    const float = Math.sin(this.time * 2) * 3
+    ctx.translate(0, float)
+    this.ghostBody(ctx)
+    this.ghostEyes(ctx, Math.floor(this.time * 2) % 25 === 0)
+    this.ghostMouth(ctx)
+    this.ghostCheeks(ctx)
+  }
+
+  private ghostDance(ctx: CanvasRenderingContext2D): void {
+    const float = Math.sin(this.time * 3) * 4
+    const tilt = Math.sin(this.time * 5) * 0.1
+    ctx.translate(0, float)
+    ctx.rotate(tilt)
+    this.ghostBody(ctx)
+    this.ghostEyes(ctx)
+    this.ghostMouth(ctx, this.frame % 4 < 2)
+    this.ghostCheeks(ctx)
+  }
+
+  private ghostJump(ctx: CanvasRenderingContext2D): void {
+    const float = Math.sin(this.time * 4) * 6
+    ctx.translate(0, float)
+    this.ghostBody(ctx, -1)
+    this.ghostEyes(ctx)
+    this.ghostMouth(ctx, true)
+    this.ghostCheeks(ctx)
+    // Little arms waving
+    const { body } = this.colors
+    const armWave = Math.round(Math.sin(this.time * 8))
+    this.p(ctx, -5, -2 + armWave, body); this.p(ctx, -5, -1 + armWave, body)
+    this.p(ctx, 5, -2 - armWave, body); this.p(ctx, 5, -1 - armWave, body)
+  }
+
+  private ghostHeadbang(ctx: CanvasRenderingContext2D): void {
+    const float = Math.sin(this.time * 3) * 3
+    const headDip = Math.abs(Math.sin(this.time * 10)) * 2
+    ctx.translate(0, float + headDip)
+    this.ghostBody(ctx)
+    this.ghostEyes(ctx)
+    this.ghostMouth(ctx, true)
+    this.ghostCheeks(ctx)
   }
 }

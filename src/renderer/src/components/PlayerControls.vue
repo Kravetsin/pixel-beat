@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { usePlayerStore } from '../stores/playerStore'
 
 const playerStore = usePlayerStore()
@@ -26,18 +26,51 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-function handleSeek(e: MouseEvent): void {
-  const bar = e.currentTarget as HTMLElement
+// --- Draggable bar logic ---
+
+const draggingSeek = ref(false)
+const draggingVolume = ref(false)
+const seekPreview = ref(0)
+
+function ratioFromEvent(e: MouseEvent, bar: HTMLElement): number {
   const rect = bar.getBoundingClientRect()
-  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-  emit('seek', ratio * playerStore.duration)
+  return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
 }
 
-function handleVolume(e: MouseEvent): void {
+function startSeekDrag(e: MouseEvent): void {
   const bar = e.currentTarget as HTMLElement
-  const rect = bar.getBoundingClientRect()
-  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-  emit('volume', ratio)
+  draggingSeek.value = true
+  seekPreview.value = ratioFromEvent(e, bar) * playerStore.duration
+  emit('seek', seekPreview.value)
+
+  const onMove = (ev: MouseEvent): void => {
+    seekPreview.value = ratioFromEvent(ev, bar) * playerStore.duration
+    emit('seek', seekPreview.value)
+  }
+  const onUp = (): void => {
+    draggingSeek.value = false
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+  }
+  window.addEventListener('mousemove', onMove)
+  window.addEventListener('mouseup', onUp)
+}
+
+function startVolumeDrag(e: MouseEvent): void {
+  const bar = e.currentTarget as HTMLElement
+  draggingVolume.value = true
+  emit('volume', ratioFromEvent(e, bar))
+
+  const onMove = (ev: MouseEvent): void => {
+    emit('volume', ratioFromEvent(ev, bar))
+  }
+  const onUp = (): void => {
+    draggingVolume.value = false
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+  }
+  window.addEventListener('mousemove', onMove)
+  window.addEventListener('mouseup', onUp)
 }
 
 const repeatLabel = computed(() => {
@@ -54,7 +87,7 @@ const repeatLabel = computed(() => {
     <!-- Progress bar -->
     <div class="flex items-center gap-3">
       <span class="text-text-dim w-10 text-right" style="font-size: 7px;">{{ formatTime(playerStore.currentTime) }}</span>
-      <div class="pixel-bar flex-1" @click="handleSeek">
+      <div class="pixel-bar flex-1" @mousedown="startSeekDrag">
         <div class="pixel-bar__fill" :style="{ width: progressPercent + '%' }" />
       </div>
       <span class="text-text-dim w-10" style="font-size: 7px;">{{ formatTime(playerStore.duration) }}</span>
@@ -102,7 +135,7 @@ const repeatLabel = computed(() => {
       <!-- Volume -->
       <div class="flex items-center gap-2 flex-1 justify-end">
         <span class="text-text-dim" style="font-size: 7px;">VOL</span>
-        <div class="pixel-bar pixel-bar--volume w-20" @click="handleVolume">
+        <div class="pixel-bar pixel-bar--volume w-20" @mousedown="startVolumeDrag">
           <div class="pixel-bar__fill" :style="{ width: (playerStore.volume * 100) + '%' }" />
         </div>
       </div>

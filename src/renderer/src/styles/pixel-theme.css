@@ -51,7 +51,7 @@ body {
 
 .pixel-btn:hover {
   background: var(--accent);
-  color: #fff;
+  color: var(--bg-dark);
 }
 
 .pixel-btn:active {
