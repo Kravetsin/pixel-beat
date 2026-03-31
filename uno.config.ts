@@ -4,13 +4,13 @@ export default defineConfig({
   presets: [presetUno()],
   theme: {
     colors: {
-      'bg-dark': '#1a1a2e',
-      'bg-mid': '#16213e',
-      'bg-light': '#0f3460',
-      accent: '#e94560',
-      'accent-soft': '#533483',
-      'text-primary': '#eeeeee',
-      'text-dim': '#888888'
+      'bg-dark': 'var(--bg-dark)',
+      'bg-mid': 'var(--bg-mid)',
+      'bg-light': 'var(--bg-light)',
+      accent: 'var(--accent)',
+      'accent-soft': 'var(--accent-soft)',
+      'text-primary': 'var(--text)',
+      'text-dim': 'var(--text-dim)'
     }
   }
 })
