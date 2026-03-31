@@ -1,0 +1,46 @@
+appId: com.pixelbeat.app
+productName: PixelBeat
+directories:
+  buildResources: build
+  output: dist-release
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+asarUnpack:
+  - resources/**
+win:
+  executableName: PixelBeat
+  target:
+    - nsis
+    - portable
+  icon: resources/icon.ico
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+mac:
+  target:
+    - dmg
+  icon: resources/icon.icns
+  entitlementsInherit: build/entitlements.mac.plist
+  notarize: false
+dmg:
+  artifactName: ${name}-${version}.${ext}
+linux:
+  target:
+    - AppImage
+    - deb
+  maintainer: ''
+  category: Audio
+  icon: resources/icon.png
+appImage:
+  artifactName: ${name}-${version}.${ext}
+extraResources:
+  - from: resources/yt-dlp/
+    to: yt-dlp/
+npmRebuild: false

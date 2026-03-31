@@ -1,0 +1,135 @@
+:root {
+  --bg-dark: #1a1a2e;
+  --bg-mid: #16213e;
+  --bg-light: #0f3460;
+  --accent: #e94560;
+  --accent-soft: #533483;
+  --text: #eee;
+  --text-dim: #888;
+  --pixel-border: 2px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text);
+  font-family: 'Press Start 2P', monospace, sans-serif;
+  font-size: 8px;
+  line-height: 1.6;
+  -webkit-font-smoothing: none;
+  image-rendering: pixelated;
+}
+
+/* Pixel-style buttons */
+.pixel-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 6px 12px;
+  border: var(--pixel-border) solid var(--accent);
+  background: var(--bg-mid);
+  color: var(--text);
+  cursor: pointer;
+  position: relative;
+  box-shadow: inset -2px -2px 0 rgba(0,0,0,0.3), inset 2px 2px 0 rgba(255,255,255,0.08);
+  transition: transform 0.05s, box-shadow 0.05s;
+}
+
+.pixel-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.pixel-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+.pixel-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.pixel-btn--ghost:hover {
+  background: transparent;
+  border-color: var(--accent-soft);
+  color: var(--accent);
+}
+
+.pixel-btn--ghost.active {
+  color: var(--accent);
+}
+
+/* Segmented bar (progress / volume) */
+.pixel-bar {
+  height: 8px;
+  background: var(--bg-dark);
+  border: var(--pixel-border) solid var(--accent-soft);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.pixel-bar__fill {
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--accent) 0px,
+    var(--accent) 4px,
+    transparent 4px,
+    transparent 6px
+  );
+}
+
+.pixel-bar--volume .pixel-bar__fill {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--accent-soft) 0px,
+    var(--accent-soft) 4px,
+    transparent 4px,
+    transparent 6px
+  );
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+  border-left: 2px solid var(--bg-mid);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-soft);
+  border: 2px solid var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Drag region for frameless window */
+.titlebar-drag {
+  -webkit-app-region: drag;
+}
+
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+}
