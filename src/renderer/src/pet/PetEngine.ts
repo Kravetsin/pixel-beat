@@ -98,7 +98,7 @@ export class PetEngine {
   }
 
   // Shared: 2x2 eye with highlight
-  private drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, outline: string): void {
+  private drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, _outline: string): void {
     const eyeColor = this.eyeGlow ? this.colors.eyeGlow : '#ffffff'
     this.d(ctx, x, y, eyeColor)
     this.d(ctx, x + 1, y, eyeColor)
@@ -343,7 +343,6 @@ export class PetEngine {
     // Tentacles (wavy, flowing down from bell rim)
     const ts = opts.tentacleSpeed ?? this.time * 3
     for (let i = -4; i <= 4; i += 2) {
-      const wave = Math.sin(ts + i * 0.8)
       for (let j = 0; j < 4; j++) {
         const wx = Math.round(Math.sin(ts + i + j * 1.2) * 1)
         this.d(ctx, i + wx, 2 + j, j < 2 ? body : outline)
@@ -424,7 +423,7 @@ export class PetEngine {
       squash?: number
     } = {}
   ): void {
-    const { body, dark, inner } = this.colors
+    const { body, dark } = this.colors
     const outline = shade(body, 70)
     const light = tint(body, 50)
     const sq = opts.squash ?? 0
