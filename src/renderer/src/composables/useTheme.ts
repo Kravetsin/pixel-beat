@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { themes, getTheme, applyTheme, type Theme } from '../styles/themes'
 
 const currentTheme = ref<Theme>(themes[0])
