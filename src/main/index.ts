@@ -36,6 +36,9 @@ function createPetOverlay(config: unknown): void {
 
   petOverlayWindow.on('ready-to-show', () => {
     petOverlayWindow?.show()
+  })
+
+  petOverlayWindow.webContents.on('did-finish-load', () => {
     petOverlayWindow?.webContents.send('pet-overlay:config', petOverlayConfig)
   })
 

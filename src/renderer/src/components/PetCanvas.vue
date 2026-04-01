@@ -14,8 +14,8 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const pet = new PetEngine()
 
 watch(() => props.petColors, (colors) => {
-  if (colors) pet.colors = colors
-}, { immediate: true })
+  if (colors) pet.colors = { ...colors }
+}, { immediate: true, deep: true })
 
 watch(() => props.petType, (type) => {
   if (type) pet.petType = type

@@ -1,6 +1,6 @@
 {
   "name": "pixelbeat",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "description": "Pixel Art YouTube Music Player with animated pixel pet",
   "main": "./out/main/index.js",
   "author": "",
