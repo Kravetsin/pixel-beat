@@ -20,7 +20,10 @@ export const usePlaylistStore = defineStore('playlist', () => {
   }
 
   async function addPlaylist(playlist: Playlist): Promise<void> {
-    playlists.value.push(playlist)
+    const existingIds = new Set(playlists.value.flatMap((p) => p.tracks.map((t) => t.id)))
+    const filtered: Track[] = playlist.tracks.filter((t) => !existingIds.has(t.id))
+    if (filtered.length === 0) return
+    playlists.value.push({ ...playlist, tracks: filtered })
     await saveToDisk()
   }
 

@@ -63,6 +63,20 @@ export const themes: Theme[] = [
     pet: { body: '#e94560', dark: '#a070cc', inner: '#ff8fa3', eyeGlow: '#00b4d8' }
   },
   {
+    id: 'hokusai',
+    name: 'Hokusai',
+    vars: {
+      '--bg-dark': '#3b4470',
+      '--bg-mid': '#4e5a8a',
+      '--bg-light': '#6b7db0',
+      '--accent': '#f0829a',
+      '--accent-soft': '#8fb4d0',
+      '--text': '#f2e4ea',
+      '--text-dim': '#a8a0c0'
+    },
+    pet: { body: '#f0829a', dark: '#3b4470', inner: '#8fb4d0', eyeGlow: '#f7c4d4' }
+  },
+  {
     id: 'sunset',
     name: 'Sunset',
     vars: {
