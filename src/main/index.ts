@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, session, Tray, Menu, nativeImage } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, session, Tray, Menu, nativeImage, screen } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { autoUpdater } from 'electron-updater'
@@ -8,7 +8,68 @@ import { setValue, getValue } from './services/store'
 
 let tray: Tray | null = null
 let mainWindow: BrowserWindow | null = null
+let petOverlayWindow: BrowserWindow | null = null
+let petOverlayConfig: unknown = null
 let isQuitting = false
+
+function createPetOverlay(config: unknown): void {
+  if (petOverlayWindow) return
+
+  petOverlayConfig = config
+
+  petOverlayWindow = new BrowserWindow({
+    width: 120,
+    height: 120,
+    transparent: true,
+    backgroundColor: '#00000000',
+    frame: false,
+    alwaysOnTop: true,
+    resizable: false,
+    skipTaskbar: true,
+    hasShadow: false,
+    show: false,
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  petOverlayWindow.on('ready-to-show', () => {
+    petOverlayWindow?.show()
+    petOverlayWindow?.webContents.send('pet-overlay:config', petOverlayConfig)
+  })
+
+  petOverlayWindow.webContents.on('context-menu', () => {
+    const menu = Menu.buildFromTemplate([
+      { label: 'Show PixelBeat', click: () => restoreFromPetMode() },
+      { type: 'separator' },
+      { label: 'Play / Pause', click: () => mainWindow?.webContents.send('tray:toggle-play') },
+      { label: 'Next Track', click: () => mainWindow?.webContents.send('tray:next') },
+      { label: 'Previous Track', click: () => mainWindow?.webContents.send('tray:previous') },
+      { type: 'separator' },
+      { label: 'Quit', click: () => { isQuitting = true; app.quit() } }
+    ])
+    menu.popup({ window: petOverlayWindow! })
+  })
+
+  petOverlayWindow.on('closed', () => {
+    petOverlayWindow = null
+  })
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    petOverlayWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/pet-overlay.html')
+  } else {
+    petOverlayWindow.loadFile(join(__dirname, '../renderer/pet-overlay.html'))
+  }
+}
+
+function restoreFromPetMode(): void {
+  if (petOverlayWindow) {
+    petOverlayWindow.close()
+    petOverlayWindow = null
+  }
+  mainWindow?.show()
+}
 
 function createTray(): void {
   const trayIcon = nativeImage.createFromPath(icon)
@@ -43,7 +104,7 @@ function createTray(): void {
 
   tray.setToolTip('PixelBeat')
   tray.setContextMenu(contextMenu)
-  tray.on('double-click', () => mainWindow?.show())
+  tray.on('double-click', () => restoreFromPetMode())
 }
 
 function createWindow(): void {
@@ -198,6 +259,48 @@ app.whenReady().then(() => {
     if (win) win.isMaximized() ? win.unmaximize() : win.maximize()
   })
   ipcMain.on('window:close', () => BrowserWindow.getFocusedWindow()?.close())
+
+  ipcMain.on('pet-overlay:enter', (_, config) => {
+    mainWindow?.hide()
+    createPetOverlay(config)
+  })
+
+  ipcMain.on('pet-overlay:restore', () => {
+    restoreFromPetMode()
+  })
+
+  // Pet overlay dragging — main process polls cursor for smooth movement
+  let dragInterval: ReturnType<typeof setInterval> | null = null
+  let dragOffsetX = 0
+  let dragOffsetY = 0
+
+  ipcMain.on('pet-overlay:drag-start', (_, offsetX: number, offsetY: number) => {
+    dragOffsetX = offsetX
+    dragOffsetY = offsetY
+    if (dragInterval) clearInterval(dragInterval)
+    dragInterval = setInterval(() => {
+      if (!petOverlayWindow || petOverlayWindow.isDestroyed()) {
+        if (dragInterval) { clearInterval(dragInterval); dragInterval = null }
+        return
+      }
+      const cursor = screen.getCursorScreenPoint()
+      petOverlayWindow.setPosition(cursor.x - dragOffsetX, cursor.y - dragOffsetY)
+    }, 5)
+  })
+
+  ipcMain.on('pet-overlay:drag-end', () => {
+    if (dragInterval) { clearInterval(dragInterval); dragInterval = null }
+  })
+
+  ipcMain.on('pet-overlay:toggle-play', () => {
+    mainWindow?.webContents.send('tray:toggle-play')
+  })
+
+  ipcMain.on('beat-energy:update', (_, energy) => {
+    if (petOverlayWindow && !petOverlayWindow.isDestroyed()) {
+      petOverlayWindow.webContents.send('beat-energy:forward', energy)
+    }
+  })
 
   registerIpcHandlers()
   createTray()

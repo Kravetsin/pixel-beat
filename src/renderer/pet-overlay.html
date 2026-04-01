@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>PixelBeat Pet</title>
+    <style>
+      * { margin: 0; padding: 0; }
+      html, body {
+        background: transparent;
+        overflow: hidden;
+        width: 120px;
+        height: 120px;
+      }
+      canvas {
+        image-rendering: pixelated;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="pet" width="120" height="120"></canvas>
+    <script type="module" src="/src/pet-overlay-main.ts"></script>
+  </body>
+</html>

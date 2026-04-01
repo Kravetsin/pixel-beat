@@ -7,6 +7,14 @@ export default defineConfig({
   main: {},
   preload: {},
   renderer: {
+    build: {
+      rollupOptions: {
+        input: {
+          main: resolve('src/renderer/index.html'),
+          'pet-overlay': resolve('src/renderer/pet-overlay.html')
+        }
+      }
+    },
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src')

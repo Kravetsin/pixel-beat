@@ -34,4 +34,12 @@ export interface ElectronAPI {
   onUpdateDownloaded: (cb: () => void) => void
   downloadUpdate: () => void
   installUpdate: () => void
+  enterPetMode: (config: { petType: string; petColors: { body: string; dark: string; inner: string; eyeGlow: string } }) => void
+  petOverlayRestoreMain: () => void
+  sendBeatEnergy: (energy: { bass: number; mid: number; high: number; overall: number; isBeat: boolean }) => void
+  onBeatEnergy: (cb: (energy: { bass: number; mid: number; high: number; overall: number; isBeat: boolean }) => void) => void
+  onPetConfig: (cb: (config: { petType: string; petColors: { body: string; dark: string; inner: string; eyeGlow: string } }) => void) => void
+  petOverlayTogglePlay: () => void
+  petOverlayDragStart: (offsetX: number, offsetY: number) => void
+  petOverlayDragEnd: () => void
 }

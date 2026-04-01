@@ -16,7 +16,15 @@ const api = {
   onUpdateProgress: (cb: (percent: number) => void) => ipcRenderer.on('update:progress', (_, p) => cb(p)),
   onUpdateDownloaded: (cb: () => void) => ipcRenderer.on('update:downloaded', cb),
   downloadUpdate: () => ipcRenderer.send('update:download'),
-  installUpdate: () => ipcRenderer.send('update:install')
+  installUpdate: () => ipcRenderer.send('update:install'),
+  enterPetMode: (config: unknown) => ipcRenderer.send('pet-overlay:enter', config),
+  petOverlayRestoreMain: () => ipcRenderer.send('pet-overlay:restore'),
+  sendBeatEnergy: (energy: unknown) => ipcRenderer.send('beat-energy:update', energy),
+  onBeatEnergy: (cb: (energy: unknown) => void) => ipcRenderer.on('beat-energy:forward', (_, e) => cb(e)),
+  onPetConfig: (cb: (config: unknown) => void) => ipcRenderer.on('pet-overlay:config', (_, c) => cb(c)),
+  petOverlayTogglePlay: () => ipcRenderer.send('pet-overlay:toggle-play'),
+  petOverlayDragStart: (offsetX: number, offsetY: number) => ipcRenderer.send('pet-overlay:drag-start', offsetX, offsetY),
+  petOverlayDragEnd: () => ipcRenderer.send('pet-overlay:drag-end')
 }
 
 if (process.contextIsolated) {

@@ -21,7 +21,7 @@ export function useBeatDetector(audio: HTMLAudioElement) {
   let ctx: AudioContext | null = null
   let analyser: AnalyserNode | null = null
   let dataArray: Uint8Array<ArrayBuffer> | null = null
-  let rafId: number | null = null
+  let intervalId: ReturnType<typeof setInterval> | null = null
   let initialized = false
 
   const energyHistory: number[] = []
@@ -95,7 +95,13 @@ export function useBeatDetector(audio: HTMLAudioElement) {
       energy.isBeat = false
     }
 
-    rafId = requestAnimationFrame(update)
+    window.api.sendBeatEnergy({
+      bass: energy.bass,
+      mid: energy.mid,
+      high: energy.high,
+      overall: energy.overall,
+      isBeat: energy.isBeat
+    })
   }
 
   /** Must be called (and awaited) BEFORE audio.play() */
@@ -107,21 +113,22 @@ export function useBeatDetector(audio: HTMLAudioElement) {
   }
 
   function startAnalysis(): void {
-    if (rafId === null) {
-      update()
+    if (intervalId === null) {
+      intervalId = setInterval(update, 16)
     }
   }
 
   function stopAnalysis(): void {
-    if (rafId !== null) {
-      cancelAnimationFrame(rafId)
-      rafId = null
+    if (intervalId !== null) {
+      clearInterval(intervalId)
+      intervalId = null
     }
     energy.bass = 0
     energy.mid = 0
     energy.high = 0
     energy.overall = 0
     energy.isBeat = false
+    window.api.sendBeatEnergy({ bass: 0, mid: 0, high: 0, overall: 0, isBeat: false })
   }
 
   return {

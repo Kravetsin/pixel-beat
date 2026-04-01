@@ -12,6 +12,13 @@ const { currentPet, nextPet } = usePet()
 function minimize(): void { window.api.windowMinimize() }
 function maximize(): void { window.api.windowMaximize() }
 function close(): void { window.api.windowClose() }
+function enterPetMode(): void {
+  const { body, dark, inner, eyeGlow } = currentTheme.value.pet
+  window.api.enterPetMode({
+    petType: currentPet.value.id,
+    petColors: { body, dark, inner, eyeGlow }
+  })
+}
 </script>
 
 <template>
@@ -45,6 +52,15 @@ function close(): void { window.api.windowClose() }
         @click="$emit('import')"
       >
         + Import
+      </button>
+
+      <button
+        class="pixel-btn--ghost px-2 py-1 text-text-dim hover:text-accent"
+        style="font-size: 8px;"
+        title="Pet Mode"
+        @click="enterPetMode"
+      >
+        PET
       </button>
 
       <div class="flex items-center ml-3">
