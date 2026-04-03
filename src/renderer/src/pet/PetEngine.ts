@@ -1054,7 +1054,7 @@ export class PetEngine {
   }
 
   private robotFire(ctx: CanvasRenderingContext2D): void {
-    const { body, dark, inner } = this.colors
+    const { body, dark } = this.colors
     const outline = shade(body, 80)
     const light = tint(body, 50)
     const shake = Math.round(Math.sin(this.time * 15) * 1)
