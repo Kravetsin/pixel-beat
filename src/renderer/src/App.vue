@@ -134,15 +134,21 @@ function handleTogglePlayPause(): void {
         <!-- Energy bars -->
         <div v-if="playerStore.isPlaying" class="w-full flex flex-col gap-1">
           <div class="flex items-center gap-2">
+            <span class="text-text-dim w-8" style="font-size: 7px;">KICK</span>
+            <div class="pixel-bar flex-1">
+              <div class="pixel-bar__fill" :style="{ width: (player.beatDetector.energy.kick * 100) + '%' }" />
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
             <span class="text-text-dim w-8" style="font-size: 7px;">BASS</span>
             <div class="pixel-bar flex-1">
               <div class="pixel-bar__fill" :style="{ width: (player.beatDetector.energy.bass * 100) + '%' }" />
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-text-dim w-8" style="font-size: 7px;">MID</span>
+            <span class="text-text-dim w-8" style="font-size: 7px;">VOC</span>
             <div class="pixel-bar pixel-bar--volume flex-1">
-              <div class="pixel-bar__fill" :style="{ width: (player.beatDetector.energy.mid * 100) + '%' }" />
+              <div class="pixel-bar__fill" :style="{ width: (player.beatDetector.energy.vocal * 100) + '%' }" />
             </div>
           </div>
           <div class="flex items-center gap-2">

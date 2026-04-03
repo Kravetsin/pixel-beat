@@ -7,7 +7,7 @@ const ctx = canvas.getContext('2d')!
 ctx.imageSmoothingEnabled = false
 
 const pet = new PetEngine()
-let energy: BeatEnergy = { bass: 0, mid: 0, high: 0, overall: 0, isBeat: false }
+let energy: BeatEnergy = { kick: 0, bass: 0, vocal: 0, high: 0, overall: 0, vocalRaw: 0, isKickHit: false, isSnareHit: false }
 
 window.api.onBeatEnergy((e: BeatEnergy) => {
   energy = e

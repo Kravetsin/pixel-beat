@@ -36,8 +36,8 @@ export interface ElectronAPI {
   installUpdate: () => void
   enterPetMode: (config: { petType: string; petColors: { body: string; dark: string; inner: string; eyeGlow: string } }) => void
   petOverlayRestoreMain: () => void
-  sendBeatEnergy: (energy: { bass: number; mid: number; high: number; overall: number; isBeat: boolean }) => void
-  onBeatEnergy: (cb: (energy: { bass: number; mid: number; high: number; overall: number; isBeat: boolean }) => void) => void
+  sendBeatEnergy: (energy: { kick: number; bass: number; vocal: number; high: number; overall: number; vocalRaw: number; isKickHit: boolean; isSnareHit: boolean }) => void
+  onBeatEnergy: (cb: (energy: { kick: number; bass: number; vocal: number; high: number; overall: number; vocalRaw: number; isKickHit: boolean; isSnareHit: boolean }) => void) => void
   onPetConfig: (cb: (config: { petType: string; petColors: { body: string; dark: string; inner: string; eyeGlow: string } }) => void) => void
   petOverlayTogglePlay: () => void
   petOverlayDragStart: (offsetX: number, offsetY: number) => void

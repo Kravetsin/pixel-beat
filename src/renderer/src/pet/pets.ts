@@ -6,7 +6,7 @@ export interface PetDef {
 export const pets: PetDef[] = [
   { id: 'cat', name: 'Cat' },
   { id: 'ghost', name: 'Jellyfish' },
-  { id: 'frog', name: 'Crab' }
+  { id: 'claude', name: 'Robot' }
 ]
 
 export function getPet(id: string): PetDef {
